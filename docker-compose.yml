@@ -1,0 +1,42 @@
+services:
+  trainer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODE: train
+    image: audio-cnn-train
+    container_name: neurosonic-train
+    command: ["python", "train.py"]
+    volumes:
+      - ./ESC-50-master:/workspace/ESC-50-master
+      - ./saved_models:/workspace/saved_models
+      - ./tensorboard_logs:/workspace/tensorboard_logs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  inference:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODE: main
+    image: audio-cnn-inference
+    container_name: neurosonic-inference
+    command: ["python", "main.py"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./saved_models:/workspace/saved_models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

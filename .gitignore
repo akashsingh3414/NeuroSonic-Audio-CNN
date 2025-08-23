@@ -1,0 +1,10 @@
+*__pycache__
+venv/
+*.zip
+ESC-50-master
+saved_models/
+tensorboard_logs/
+*.pth
+*.pt
+*.ckpt
+*.log
