@@ -100,11 +100,11 @@ def train():
         T.Resample(orig_freq=44100, new_freq=22050),
         T.MelSpectrogram(
             sample_rate=22050,
-            n_fft=1024,
-            hop_length=256,
+            n_fft=2048,
+            hop_length=512,
             n_mels=128,
             f_min=0,
-            f_max=11025
+            f_max=11025,
         ),
         T.AmplitudeToDB(),
         NormalizeSpec(),
@@ -117,11 +117,11 @@ def train():
         T.Resample(orig_freq=44100, new_freq=22050),
         T.MelSpectrogram(
             sample_rate=22050,
-            n_fft=1024,
-            hop_length=256,
+            n_fft=2048,
+            hop_length=512,
             n_mels=128,
             f_min=0,
-            f_max=11025
+            f_max=11025,
         ),
         T.AmplitudeToDB(),
         NormalizeSpec(),
@@ -247,11 +247,11 @@ def train():
                     'classes': train_dataset.classes,
                     'sample_rate': 22050,
                     'mel_params': {
-                        'n_fft': 1024,
-                        'hop_length': 256,
+                        'n_fft': 2048,
+                        'hop_length': 512,
                         'n_mels': 128,
                         'f_min': 0,
-                        'f_max': 11025
+                        'f_max': 11025,
                     }
                 }, best_model_path)
                 print(f'New best model saved with Val Loss: {avg_val_loss:.4f}')

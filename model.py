@@ -50,7 +50,6 @@ class AudioCNN(nn.Module):
             nn.BatchNorm2d(64),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(3, stride=2, padding=1),
-            nn.Dropout(p=0.2)
         )
 
         # ResNet-style layers
