@@ -22,7 +22,7 @@ cd neurosonic
 python train.py
 
 # Start the backend
-python main.py
+uvicorn main:app --reload --port 8000
 
 # Start the fronend
 cd frontend
@@ -38,18 +38,18 @@ tensorboard --logdir ./tensorboard_logs
 
 ## API Usage
 
-**Base URL:** `http://0.0.0.0:8000`
+**Base URL:** `http://127.0.0.1:8000`
 
 **Health Check:**
 
 ```bash
-curl -X GET http://0.0.0.0:8000/health
+curl -X GET http://127.0.0.1:8000/health
 ```
 
 **Prediction:**
 
 ```bash
-curl -X POST http://0.0.0.0:8000/inference \
+curl -X POST http://127.0.0.1:8000/inference \
   -H "Content-Type: application/json" \
   -d '{"audio_data": "base64_encoded_audio_content"}'
 ```

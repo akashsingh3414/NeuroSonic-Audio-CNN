@@ -1,17 +1,42 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from contextlib import asynccontextmanager
+import logging
 from utils.classifier import AudioClassifier
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
+logger = logging.getLogger(__name__)
 
-class InferenceRequest(BaseModel):
-    audio_data: str
+classifier: AudioClassifier | None = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global classifier
+    try:
+        logger.info("Starting NeuroSonic Audio Classifier API")
+
+        classifier = AudioClassifier()
+        logger.info(
+            f"Model loaded | device={classifier.device} | classes={len(classifier.classes)}"
+        )
+        yield
+    except Exception:
+        logger.exception("Failed to initialize AudioClassifier")
+        classifier = None
+        yield
+    finally:
+        logger.info("Shutting down NeuroSonic Audio Classifier API")
 
 
 app = FastAPI(
     title="NeuroSonic Audio Classifier API",
     description="ESC-50 audio classification with CNN",
-    version="2.0.0"
+    version="2.0.1",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -22,24 +47,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-try:
-    classifier = AudioClassifier()
-except Exception as e:
-    print(f"ERROR: Failed to initialize classifier: {e}")
-    classifier = None
+class InferenceRequest(BaseModel):
+    audio_data: str # Base64 encoded audio file
 
+class InferenceResponse(BaseModel):
+    predictions: list
+    visualization: dict
+    input_spectrogram: dict
+    waveform: dict
+    metadata: dict
 
 @app.get("/")
 def root():
     return {
         "name": "NeuroSonic Audio Classifier",
-        "version": "2.0.0",
         "status": "running" if classifier else "model not loaded",
         "endpoints": {
             "health": "/health",
-            "inference": "/inference (POST)",
-            "model_info": "/model-info"
-        }
+            "inference": "/inference",
+            "model_info": "/model-info",
+        },
     }
 
 
@@ -47,11 +74,12 @@ def root():
 def health():
     if classifier is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
+
     return {
         "status": "ok",
         "model_loaded": True,
         "device": str(classifier.device),
-        "num_classes": len(classifier.classes)
+        "num_classes": len(classifier.classes),
     }
 
 
@@ -59,28 +87,26 @@ def health():
 def model_info():
     if classifier is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
+
     return {
         "classes": classifier.classes,
         "metadata": classifier.model_metadata,
         "device": str(classifier.device),
         "sample_rate": classifier.audio_processor.sample_rate,
-        "mel_params": classifier.audio_processor.mel_params
+        "mel_params": classifier.audio_processor.mel_params,
     }
 
 
-@app.post("/inference")
+@app.post("/inference", response_model=InferenceResponse)
 def inference(request: InferenceRequest):
     if classifier is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
+
     if not request.audio_data:
         raise HTTPException(status_code=400, detail="No audio data provided")
-    return classifier.predict(request.audio_data)
 
-
-if __name__ == "__main__":
-    import uvicorn
-    print("=" * 60)
-    print("Starting NeuroSonic Audio Classifier API")
-    print("Docs → http://127.0.0.1:8000/docs")
-    print("=" * 60)
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    try:
+        return classifier.predict(request.audio_data)
+    except Exception:
+        logger.exception("Inference failed")
+        raise HTTPException(status_code=500, detail="Inference failed")

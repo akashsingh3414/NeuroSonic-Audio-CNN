@@ -7,3 +7,4 @@ ESC-50-master
 *.log
 *.wav
 *.pdf
+*.env

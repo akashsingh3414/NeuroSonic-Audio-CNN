@@ -81,7 +81,7 @@ export default function HomePage() {
           new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ""),
         )
 
-        const BASE_URL = "http://127.0.0.1:8000"
+        const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://127.0.0.1:8000"
 
         const response = await fetch(`${BASE_URL}/inference`, {
           method: "POST",
